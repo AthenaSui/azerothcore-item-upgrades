@@ -44,14 +44,14 @@ private:
         sItemUpgrade->HandleDataReload(true);
         sItemUpgrade->SetReloading(false);
 
-        handler->SendGlobalGMSysMessage("Item Upgrade module data successfully reloaded.");
+        handler->SendGlobalGMSysMessage("物品升级模块数据重载成功。");
         return true;
     }
 
     static bool HandleLockItemUpgrade(ChatHandler* handler)
     {
         sItemUpgrade->SetReloading(true);
-        handler->SendSysMessage("Item Upgrade NPC is now locked, it is now safe to edit database tables. Release the lock by using .item_upgrade reload command");
+        handler->SendSysMessage("物品升级NPC已锁定，现在可以安全编辑数据库表了。使用.item_upgrade reload命令解除锁定。");
         return true;
     }
 };

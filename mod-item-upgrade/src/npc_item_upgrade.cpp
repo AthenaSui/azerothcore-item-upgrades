@@ -23,7 +23,7 @@ private:
         Item* item = player->GetItemByGuid(pagedData.item.guid);
         if (!sItemUpgrade->IsValidItemForUpgrade(item, player))
         {
-            ItemUpgrade::SendMessage(player, "Item is no longer available for upgrade.");
+            ItemUpgrade::SendMessage(player, "装备不再可升级。");
             return nullptr;
         }
 
@@ -38,27 +38,27 @@ public:
     {
         if (sItemUpgrade->GetReloading())
         {
-            ItemUpgrade::SendMessage(player, "Item Upgrade data is being reloaded by an administrator, please retry.");
+            ItemUpgrade::SendMessage(player, "管理员正在重新加载装备升级数据，请重试。");
             return CloseGossip(player);
         }
 
         sItemUpgrade->GetPagedData(player).reloaded = false;
 
         if (!sItemUpgrade->GetEnabled())
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "|cffb50505NOT AVAILABLE|r", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
+            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "|cffb50505不可用|r", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
         else
         {
-            AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "Choose an item to upgrade (by stat, one-by-one)", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
-            AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "Choose an item to upgrade (all stats at once)", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 7);
+            AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "选择要升级的装备（按属性逐一升级）", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+            AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "选择要升级的装备（所有属性全部升级）", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 7);
             if (sItemUpgrade->GetAllowPurgeUpgrades())
-                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "Purge upgrades", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 6);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "See upgraded items", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "清除升级", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 6);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "查看升级的装备", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
             AddGossipItemFor(player, GOSSIP_ICON_BATTLE, "Update visual cache", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4);
 
             if (player->GetSession()->GetSecurity() == SEC_ADMINISTRATOR)
-                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "Lock for database edit", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 5, "The NPC will no longer be available to players until you release the lock with .item_upgrade reload command.", 0, false);
+                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "锁定数据库编辑", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 5, "在你用.item_upgrade reload命令解除锁定之前，NPC将不再对玩家可用。", 0, false);
         }
-        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Nevermind...", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "没事了...", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
         SendGossipMenuFor(player, DEFAULT_GOSSIP_MESSAGE, creature->GetGUID());
         return true;
     }
@@ -68,7 +68,7 @@ public:
         ItemUpgrade::PagedData& pagedData = sItemUpgrade->GetPagedData(player);
         if (sItemUpgrade->GetReloading() || pagedData.reloaded)
         {
-            ItemUpgrade::SendMessage(player, "Item Upgrade data is being reloaded by an administrator, please retry.");
+            ItemUpgrade::SendMessage(player, "管理员正在重新加载装备升级数据，请重试。");
             return CloseGossip(player, false);
         }
 

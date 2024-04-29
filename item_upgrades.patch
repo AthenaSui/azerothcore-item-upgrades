@@ -2394,7 +2394,7 @@ index 000000000..c1e2f28ab
 +    upgrades.push_back(newUpgrade);
 +
 +    std::ostringstream oss;
-+    oss << "|cffeb891a[ITEM UPGRADES SYSTEM]:|r";
++    oss << "|cffeb891a[装备升级系统]:|r";
 +    oss << " " << ItemLink(player, item);
 +    oss << " had " << StatTypeToString(upgrade->statType) << " upgraded to RANK " << upgrade->statRank << ".";
 +    oss << " Increase by " << upgrade->statModPct << "% [";
