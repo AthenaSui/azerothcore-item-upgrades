@@ -220,10 +220,11 @@ public:
     void UpdateVisualCache(Player* player);
     void VisualFeedback(Player* player);
 
-    void LoadPurgeConfig(bool allow, int32 token, int32 count);
+    void LoadPurgeConfig(bool allow, int32 token, int32 count, bool refundAllOnPurge);
     bool GetAllowPurgeUpgrades() const;
     uint32 GetPurgeToken() const;
     uint32 GetPurgeTokenCount() const;
+    bool GetRefundAllOnPurge() const;
 
     bool PurgeUpgrade(Player* player, Item* item);
 
@@ -238,6 +239,16 @@ public:
     void SetRandomUpgradeMaxRank(int32 value);
     uint32 GetRandomUpgradeMaxRank() const;
     bool ChooseRandomUpgrade(Player* player, Item* item);
+    void SetRandomUpgradesWhenBuying(bool value);
+    bool GetRandomUpgradesWhenBuying() const;
+    void SetRandomUpgradesWhenLooting(bool value);
+    bool GetRandomUpgradesWhenLooting() const;
+    void SetRandomUpgradesWhenWinning(bool value);
+    bool GetRandomUpgradesWhenWinning() const;
+    void SetRandomUpgradesOnQuestReward(bool value);
+    bool GetRandomUpgradesOnQuestReward() const;
+    void SetRandomUpgradesWhenCrafting(bool value);
+    bool GetRandomUpgradesWhenCrafting() const;
 public:
     static std::string ItemIcon(const ItemTemplate* proto, uint32 width, uint32 height, int x, int y);
     static std::string ItemIcon(const ItemTemplate* proto);
@@ -268,12 +279,18 @@ private:
     bool allowPurgeUpgrades;
     uint32 purgeToken;
     uint32 purgeTokenCount;
+    bool refundAllOnPurge;
 
     bool randomUpgrades;
     std::string randomUpgradesLoginMsg;
     float randomUpgradeChance;
     uint32 randomUpgradeMaxStats;
     uint32 randomUpgradeMaxRank;
+    bool randomUpgradesWhenBuying;
+    bool randomUpgradesWhenLooting;
+    bool randomUpgradesWhenWinning;
+    bool randomUpgradesOnQuestReward;
+    bool randomUpgradesWhenCrafting;
 
     static bool CompareIdentifier(const Identifier* a, const Identifier* b);
     static int32 CalculateModPct(int32 value, const UpgradeStat* upgradeStat);
@@ -336,6 +353,8 @@ private:
     const StatRequirementContainer* GetStatRequirements(const UpgradeStat* upgrade, const Item* item) const;
     bool EmptyRequirements(const StatRequirementContainer* reqs) const;
     void EquipItem(Player* player, Item* item);
+    bool RefundEverything(Player* player, Item* item, const std::vector<const ItemUpgrade::UpgradeStat*>& upgrades);
+    bool TryAddItem(Player* player, uint32 entry, uint32 count, bool add);
 };
 
 #define sItemUpgrade ItemUpgrade::instance()
