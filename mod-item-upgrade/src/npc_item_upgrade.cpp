@@ -44,13 +44,13 @@ public:
 
         sItemUpgrade->GetPagedData(player).reloaded = false;
 
-        if (!sItemUpgrade->GetEnabled())
+        if (!sItemUpgrade->GetBoolConfig(CONFIG_ITEM_UPGRADE_ENABLED))
             AddGossipItemFor(player, GOSSIP_ICON_CHAT, "|cffb50505不可用|r", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
         else
         {
             AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "选择要升级的装备（按属性逐一升级）", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
             AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "选择要升级的装备（所有属性全部升级）", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 7);
-            if (sItemUpgrade->GetAllowPurgeUpgrades())
+            if (sItemUpgrade->GetBoolConfig(CONFIG_ITEM_UPGRADE_ALLOW_PURGE))
                 AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "清除升级", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 6);
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "查看升级的装备", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
             AddGossipItemFor(player, GOSSIP_ICON_BATTLE, "Update visual cache", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4);

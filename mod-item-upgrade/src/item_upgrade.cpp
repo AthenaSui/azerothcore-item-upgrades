@@ -17,23 +17,7 @@
 
 ItemUpgrade::ItemUpgrade()
 {
-    enabled = true;
     reloading = false;
-    sendItemPackets = false;
-    allowPurgeUpgrades = false;
-    purgeToken = 0;
-    purgeTokenCount = 0;
-    refundAllOnPurge = true;
-    randomUpgrades = false;
-    randomUpgradesLoginMsg = "";
-    randomUpgradeChance = 2.0f;
-    randomUpgradeMaxStats = 2;
-    randomUpgradeMaxRank = 3;
-    randomUpgradesWhenBuying = false;
-    randomUpgradesWhenLooting = true;
-    randomUpgradesWhenWinning = true;
-    randomUpgradesOnQuestReward = true;
-    randomUpgradesWhenCrafting = true;
 }
 
 ItemUpgrade::~ItemUpgrade()
@@ -48,16 +32,6 @@ ItemUpgrade* ItemUpgrade::instance()
     return &instance;
 }
 
-void ItemUpgrade::SetEnabled(bool value)
-{
-    enabled = value;
-}
-
-bool ItemUpgrade::GetEnabled() const
-{
-    return enabled;
-}
-
 bool ItemUpgrade::IsAllowedStatType(uint32 statType) const
 {
     return FindInContainer(allowedStats, statType) != nullptr;
@@ -69,6 +43,32 @@ void ItemUpgrade::LoadAllowedStats(const std::string& stats)
     std::vector<std::string_view> tokenized = Acore::Tokenize(stats, ',', false);
     std::transform(tokenized.begin(), tokenized.end(), std::back_inserter(allowedStats),
         [](const std::string_view& str) { return *Acore::StringTo<uint32>(str); });
+}
+
+bool ItemUpgrade::GetBoolConfig(ItemUpgradeBoolConfigs index) const
+{
+    return cfg.GetBoolConfig(index);
+}
+
+std::string ItemUpgrade::GetStringConfig(ItemUpgradeStringConfigs index) const
+{
+    return cfg.GetStringConfig(index);
+}
+
+float ItemUpgrade::GetFloatConfig(ItemUpgradeFloatConfigs index) const
+{
+    return cfg.GetFloatConfig(index);
+}
+
+int32 ItemUpgrade::GetIntConfig(ItemUpgradeIntConfigs index) const
+{
+    return cfg.GetIntConfig(index);
+}
+
+void ItemUpgrade::LoadConfig()
+{
+    cfg.Initialize();
+    LoadAllowedStats(cfg.GetStringConfig(CONFIG_ITEM_UPGRADE_ALLOWED_STATS));
 }
 
 void ItemUpgrade::LoadFromDB(bool reload)
@@ -775,18 +775,18 @@ bool ItemUpgrade::_AddPagedData(Player* player, const PagedData& pagedData, uint
     else if (pagedData.type == PAGED_DATA_TYPE_ITEMS_FOR_PURGE)
     {
         AddGossipItemFor(player, GOSSIP_ICON_CHAT, "|cffb50505清除升级|r", GOSSIP_SENDER_MAIN + 2, GOSSIP_ACTION_INFO_DEF + page);
-        const ItemTemplate* proto = sObjectMgr->GetItemTemplate(purgeToken);
+        const ItemTemplate* proto = sObjectMgr->GetItemTemplate((uint32)GetIntConfig(CONFIG_ITEM_UPGRADE_PURGE_TOKEN));
         if (proto != nullptr)
         {
             AddGossipItemFor(player, GOSSIP_ICON_CHAT, "清除后将收到：", GOSSIP_SENDER_MAIN + 2, GOSSIP_ACTION_INFO_DEF + page);
 
             std::ostringstream oss;
-            oss << " " << purgeTokenCount << "x";
+            oss << " " << (uint32)GetIntConfig(CONFIG_ITEM_UPGRADE_PURGE_TOKEN_COUNT) << "x";
             oss << ItemIcon(proto);
             oss << ItemLink(player, proto, 0);            
             AddGossipItemFor(player, GOSSIP_ICON_VENDOR, oss.str(), GOSSIP_SENDER_MAIN + 2, GOSSIP_ACTION_INFO_DEF + page);
         }
-        if (GetRefundAllOnPurge())
+        if (GetBoolConfig(CONFIG_ITEM_UPGRADE_REFUND_ALL_ON_PURGE))
             AddGossipItemFor(player, GOSSIP_ICON_CHAT, "|cff056e3a清除升级后退还所有款项|r", GOSSIP_SENDER_MAIN + 2, GOSSIP_ACTION_INFO_DEF + page);
         AddGossipItemFor(player, GOSSIP_ICON_CHAT, "选择要清除升级的物品：", GOSSIP_SENDER_MAIN + 2, GOSSIP_ACTION_INFO_DEF + page);
     }
@@ -1183,7 +1183,7 @@ int32 ItemUpgrade::HandleStatModifier(const Player* player, uint8 slot, uint32 s
 
 int32 ItemUpgrade::HandleStatModifier(const Player* player, Item* item, uint32 statType, int32 amount, EnchantmentSlot slot) const
 {
-    if (!GetEnabled() || !IsAllowedItem(item) || IsBlacklistedItem(item) || !IsAllowedStatType(statType))
+    if (!GetBoolConfig(CONFIG_ITEM_UPGRADE_ENABLED) || !IsAllowedItem(item) || IsBlacklistedItem(item) || !IsAllowedStatType(statType))
         return amount;
 
     if (slot < MAX_INSPECTED_ENCHANTMENT_SLOT)
@@ -1986,16 +1986,6 @@ bool ItemUpgrade::GetReloading() const
     return reloading;
 }
 
-void ItemUpgrade::SetSendItemPackets(bool value)
-{
-    sendItemPackets = value;
-}
-
-bool ItemUpgrade::GetSendItemPackets() const
-{
-    return sendItemPackets;
-}
-
 void ItemUpgrade::HandleDataReload(bool apply)
 {
     const SessionMap& sessions = sWorld->GetAllSessions();
@@ -2105,7 +2095,7 @@ void ItemUpgrade::SendItemPacket(Player* player, Item* item) const
     queryData << pProto->InventoryType;
     queryData << pProto->AllowableClass;
     queryData << pProto->AllowableRace;
-    if (GetSendItemPackets() && pProto->StatsCount > 0)
+    if (GetBoolConfig(CONFIG_ITEM_UPGRADE_SEND_PACKETS) && pProto->StatsCount > 0)
         queryData << CalculateItemLevel(player, item).second;
     else
         queryData << pProto->ItemLevel;
@@ -2124,7 +2114,7 @@ void ItemUpgrade::SendItemPacket(Player* player, Item* item) const
     for (uint32 i = 0; i < pProto->StatsCount; ++i)
     {
         queryData << pProto->ItemStat[i].ItemStatType;
-        if (GetSendItemPackets())
+        if (GetBoolConfig(CONFIG_ITEM_UPGRADE_SEND_PACKETS))
             queryData << HandleStatModifier(player, item, pProto->ItemStat[i].ItemStatType, pProto->ItemStat[i].ItemStatValue, MAX_ENCHANTMENT_SLOT);
         else
             queryData << pProto->ItemStat[i].ItemStatValue;
@@ -2265,43 +2255,6 @@ std::pair<uint32, uint32> ItemUpgrade::CalculateItemLevel(const Player* player, 
     return std::make_pair(proto->ItemLevel, (upgradedSum * proto->ItemLevel) / originalSum);
 }
 
-void ItemUpgrade::LoadPurgeConfig(bool allow, int32 token, int32 count, bool refundAll)
-{
-    allowPurgeUpgrades = allow;
-
-    if (token > 0)
-        purgeToken = (uint32)token;
-    else
-        purgeToken = 0;
-
-    if (count > 0)
-        purgeTokenCount = (uint32)count;
-    else
-        purgeTokenCount = 1;
-
-    refundAllOnPurge = refundAll;
-}
-
-bool ItemUpgrade::GetAllowPurgeUpgrades() const
-{
-    return allowPurgeUpgrades;
-}
-
-uint32 ItemUpgrade::GetPurgeToken() const
-{
-    return purgeToken;
-}
-
-uint32 ItemUpgrade::GetPurgeTokenCount() const
-{
-    return purgeTokenCount;
-}
-
-bool ItemUpgrade::GetRefundAllOnPurge() const
-{
-    return refundAllOnPurge;
-}
-
 bool ItemUpgrade::TryAddItem(Player* player, uint32 entry, uint32 count, bool add)
 {
     const ItemTemplate* proto = sObjectMgr->GetItemTemplate(entry);
@@ -2332,7 +2285,7 @@ bool ItemUpgrade::PurgeUpgrade(Player* player, Item* item)
     std::vector<const ItemUpgrade::UpgradeStat*> upgrades = FindUpgradesForItem(player, item);
     if (!upgrades.empty())
     {
-        if (!TryAddItem(player, purgeToken, purgeTokenCount, true))
+        if (!TryAddItem(player, (uint32)GetIntConfig(CONFIG_ITEM_UPGRADE_PURGE_TOKEN), (uint32)GetIntConfig(CONFIG_ITEM_UPGRADE_PURGE_TOKEN_COUNT), true))
             return false;
 
         if (!RefundEverything(player, item, upgrades))
@@ -2356,7 +2309,7 @@ bool ItemUpgrade::PurgeUpgrade(Player* player, Item* item)
 
 bool ItemUpgrade::RefundEverything(Player* player, Item* item, const std::vector<const UpgradeStat*>& upgrades)
 {
-    if (!GetRefundAllOnPurge())
+    if (!GetBoolConfig(CONFIG_ITEM_UPGRADE_REFUND_ALL_ON_PURGE))
         return true;
 
     uint32 index = 0;
@@ -2412,125 +2365,12 @@ bool ItemUpgrade::RefundEverything(Player* player, Item* item, const std::vector
     return true;
 }
 
-void ItemUpgrade::SetRandomUpgrades(bool value)
-{
-    randomUpgrades = value;
-}
-
-bool ItemUpgrade::GetRandomUpgrades() const
-{
-    return randomUpgrades;
-}
-
-void ItemUpgrade::SetRandomUpgradesLoginMsg(const std::string& value)
-{
-    randomUpgradesLoginMsg = value;
-}
-
-std::string ItemUpgrade::GetRandomUpgradesLoginMsg() const
-{
-    return randomUpgradesLoginMsg;
-}
-
-void ItemUpgrade::SetRandomUpgradeChance(float value)
-{
-    if (value <= 0.0f)
-        value = 2.0f;
-    else
-        randomUpgradeChance = value > 100.0f ? 100.0f : value;
-}
-
-float ItemUpgrade::GetRandomUpgradeChance() const
-{
-    return randomUpgradeChance;
-}
-
-void ItemUpgrade::SetRandomUpgradeMaxStats(int32 value)
-{
-    if (value <= 0)
-        randomUpgradeMaxStats = 2;
-    else
-    {
-        randomUpgradeMaxStats = (uint32)value;
-        if (randomUpgradeMaxStats > MAX_ITEM_PROTO_STATS)
-            randomUpgradeMaxStats = MAX_ITEM_PROTO_STATS;
-    }
-}
-
-uint32 ItemUpgrade::GetRandomUpgradeMaxStats() const
-{
-    return randomUpgradeMaxStats;
-}
-
-void ItemUpgrade::SetRandomUpgradeMaxRank(int32 value)
-{
-    if (value <= 0)
-        randomUpgradeMaxRank = 3;
-    else
-        randomUpgradeMaxRank = (uint32)value;
-}
-
-uint32 ItemUpgrade::GetRandomUpgradeMaxRank() const
-{
-    return randomUpgradeMaxRank;
-}
-
-void ItemUpgrade::SetRandomUpgradesWhenBuying(bool value)
-{
-    randomUpgradesWhenBuying = value;
-}
-
-bool ItemUpgrade::GetRandomUpgradesWhenBuying() const
-{
-    return randomUpgradesWhenBuying;
-}
-
-void ItemUpgrade::SetRandomUpgradesWhenLooting(bool value)
-{
-    randomUpgradesWhenLooting = value;
-}
-
-bool ItemUpgrade::GetRandomUpgradesWhenLooting() const
-{
-    return randomUpgradesWhenLooting;
-}
-
-void ItemUpgrade::SetRandomUpgradesWhenWinning(bool value)
-{
-    randomUpgradesWhenWinning = value;
-}
-
-bool ItemUpgrade::GetRandomUpgradesWhenWinning() const
-{
-    return randomUpgradesWhenWinning;
-}
-
-void ItemUpgrade::SetRandomUpgradesOnQuestReward(bool value)
-{
-    randomUpgradesOnQuestReward = value;
-}
-
-bool ItemUpgrade::GetRandomUpgradesOnQuestReward() const
-{
-    return randomUpgradesOnQuestReward;
-}
-
-void ItemUpgrade::SetRandomUpgradesWhenCrafting(bool value)
-{
-    randomUpgradesWhenCrafting = value;
-}
-
-bool ItemUpgrade::GetRandomUpgradesWhenCrafting() const
-{
-    return randomUpgradesWhenCrafting;
-}
-
 bool ItemUpgrade::ChooseRandomUpgrade(Player* player, Item* item)
 {
-    if (!GetEnabled())
+    if (!GetBoolConfig(CONFIG_ITEM_UPGRADE_ENABLED))
         return false;
 
-    if (!GetRandomUpgrades())
+    if (!GetBoolConfig(CONFIG_ITEM_UPGRADE_RANDOM_UPGRADES))
         return false;
 
     if (!IsAllowedItem(item) || IsBlacklistedItem(item))
@@ -2539,10 +2379,10 @@ bool ItemUpgrade::ChooseRandomUpgrade(Player* player, Item* item)
     if (!FindUpgradesForItem(player, item).empty())
         return false;
 
-    if (!roll_chance_f(GetRandomUpgradeChance()))
+    if (!roll_chance_f(GetFloatConfig(CONFIG_ITEM_UPGRADE_RANDOM_UPGRADES_CHANCE)))
         return false;
 
-    uint32 statCountToUpgrade = urand(1, randomUpgradeMaxStats);
+    uint32 statCountToUpgrade = urand(1, (uint32)GetIntConfig(CONFIG_ITEM_UPGRADE_RANDOM_UPGRADES_MAX_STATS));
     std::vector<_ItemStat> statTypes = LoadItemStatInfo(item);
     std::vector<const UpgradeStat*> upgrades;
     for (const _ItemStat& stat : statTypes)
@@ -2550,7 +2390,7 @@ bool ItemUpgrade::ChooseRandomUpgrade(Player* player, Item* item)
         if (!IsAllowedStatType(stat.ItemStatType))
             continue;
 
-        const UpgradeStat* foundUpgradeStat = FindNearestUpgradeStat(stat.ItemStatType, (uint16)urand(1, GetRandomUpgradeMaxRank()), item);
+        const UpgradeStat* foundUpgradeStat = FindNearestUpgradeStat(stat.ItemStatType, (uint16)urand(1, (uint32)GetIntConfig(CONFIG_ITEM_UPGRADE_RANDOM_UPGRADES_MAX_RANK)), item);
         if (foundUpgradeStat != nullptr)
             upgrades.push_back(foundUpgradeStat);
     }
